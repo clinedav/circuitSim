@@ -1,0 +1,32 @@
+
+# NAND gate: C = ~(A&B)
+# by: David Cline
+
+# A # sign indicates a comment to the end of the line
+
+# A unit consists of 3 parts:
+# 1) A list of inputNames
+# 2) A list of outputNames
+# 3) A truth table or internal circuit specification
+
+# inputs lists names of inputs to unit
+inputNames { A, B }
+
+# outputs lists names of outputs from unit
+outputNames { C }
+
+# truthTable lists the circuit output for all possible inputs
+# The order of the table is inputs, followed by outputs, as
+# previously specified--in this case, (A B, C).  Punctuation,
+# such as the comma, is optional
+
+truthTable 
+{
+0 0, 1
+0 1, 1
+1 0, 1
+1 1, 0
+}
+
+propagationDelay { 1 }
+
