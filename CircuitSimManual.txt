@@ -2,16 +2,16 @@
 ------------------------------------------------------------------------------	
 CircuitSim Manual
 David Cline
-Last updated: January 7, 2017
+Last updated: June 13, 2017
 ------------------------------------------------------------------------------
 
 Introduction
 
-CircuitSim is a program that allows you to design and test the logic of a digital
-circuit.  The circuits are designed using simple text files that define the
-inputs, outputs and logic of a circuit.  The logic of a circuit can be defined
-either by using a truth table, or by specifying a set of subcircuits and their
-connections.
+CircuitSim is a program that allows you to design and test the logic of 
+a digital circuit.  The circuits are designed using simple text files that 
+define the inputs, outputs and logic of a circuit.  The logic of a circuit 
+can be defined either by using a truth table, or by specifying a set of 
+subcircuits and their connections.
 
 The output of the program is either to run the circuit on an input,
 show a truth table, or to run a set of test cases given in another file.
@@ -230,6 +230,13 @@ As an example, the following is a set of 4 test cases for an AND gate:
 Just like with the circuit files, The (#) character indicates a
 comment.
 
+Test cases can also be annotated using ## at the beginning of lines
+before the test case.  These annotations will show up in the output.
+For example:
+
+    ## 0 | 0 test case
+    testCase { 00, 0 }
+
 ------------------------------------------------------------------------------	
 EXAMPLE CIRCUITS
 ------------------------------------------------------------------------------	
@@ -333,10 +340,13 @@ EXAMPLE TEST CASES
 	testCase { 10, 01 }
 	testCase { 11, 10 }
 
-	# Test cases for XOR4 (a,b,c,d) -> a^b^c^d
+
+	# Test cases for XOR4 (a,b,c,d) -> a^b^c^d with annotations
+
+    ## XOR4 with all 0000
 	testCase { 0000, 0 }
-	testCase { 0010, 1 }
-	testCase { 1100, 0 }
+
+    ## XOR4 with one 1101 
 	testCase { 1101, 1 }
 	
 ------------------------------------------------------------------------------

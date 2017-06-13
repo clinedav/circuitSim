@@ -17,6 +17,9 @@ public class Circuit
 	// Parsing Stuff
 	//---------------------------------------------------------------------//
 	
+	static HashMap<String, String> circuitFiles = new HashMap<>();
+	static ArrayList<String> testCaseDescription = new ArrayList<>();
+
 	static final int MAX_TRUTH_TABLE_INPUTS = 16;
 	static final int MAX_TRUTH_TABLE_OUTPUTS = 32;
 	static String keywords[] = { 
@@ -178,12 +181,13 @@ public class Circuit
 		
 		System.out.println("\nRunning test cases from " + fileName + ".txt\n");
 		printInputOutputNames();
+		testCaseDescription.clear();
 		
 		while ((token=getToken()) != null) {
 			if (token.equals("testCase")) {
 				int inCount = 0;
-				while (inCount < numInputs && scan.hasNext()) {
-					String s = scan.next();
+				String s;
+				while (inCount < numInputs && (s=getToken()) != null) {
 					for (int i=0; i<s.length(); i++) {
 						char c = s.charAt(i);
 						if (c == '0' || c == '1') {
@@ -193,8 +197,7 @@ public class Circuit
 					}
 				}
 				int outCount = 0;
-				while (outCount < numOutputs && scan.hasNext()) {
-					String s = scan.next();
+				while (outCount < numOutputs && ((s=getToken()) != null)) {
 					for (int i=0; i<s.length(); i++) {
 						char c = s.charAt(i);
 						if (c == '0' || c == '1') {
@@ -204,11 +207,17 @@ public class Circuit
 					}
 				}
 				if (inCount != numInputs || outCount != numOutputs) {
-					error("\nError. Incomplete test case.\n");
+					error("Incomplete test case in test file " + fileName + ".txt");
 				}
 				simulate();
 				
-				System.out.print("\nInput  : ");
+				System.out.println();
+				for (int i=0; i<testCaseDescription.size(); i++) {
+					System.out.println("##" + testCaseDescription.get(i));
+				}
+				testCaseDescription.clear();
+
+				System.out.print("Input  : ");
 				for (int i=0; i<numInputs; i++) {
 					if (i%4==0) System.out.print(" ");
 					if (i%32==0 && i>0) System.out.print("\n         ");
@@ -244,6 +253,14 @@ public class Circuit
 					}
 				}
 				System.out.println("");
+			}
+			else if (token.equals("}")) {
+				continue;
+			}
+			else {
+				System.out.println("\nError in test file '" + fileName +
+					".txt': Unknown command '" + token + "'.\n");
+				System.exit(0);
 			}
 		}
 		if (totalErrors > 0) {
@@ -313,17 +330,31 @@ public class Circuit
 	
 	void error(String s)
 	{
-		System.out.println(s);
+		System.out.println("\nError in file '" + type + ".txt'!\n  " + s + "\n");
 		System.exit(0);
 	}
 	
 	void openCircuitFile(String circuitType)
 	{
+		String circuitFileName = "";
 		try {
-			scan = new Scanner(new File(circuitType + ".txt"));
-			scan.useDelimiter("[ ,{;=\t\n\r]"); // : and treated separately
+			circuitFileName = circuitType + ".txt";
+
+			if (!circuitFiles.containsKey(circuitFileName))
+			{
+				scan = new Scanner(new File(circuitFileName));
+				//System.out.println(circuitType);
+				scan.useDelimiter("\\Z"); // end of file marker
+				String circuitFileText = scan.next();
+				circuitFiles.put(circuitFileName, circuitFileText);
+			}
+
+			scan = new Scanner(circuitFiles.get(circuitFileName));
+			scan.useDelimiter("[ ,{;=\t\n\r]"); // : and [] treated separately
+
 		} catch (Exception ex) {
-			error("\nError opening file '" + circuitType + ".txt'\n");
+			System.out.println("\nError opening file '" + circuitFileName + "'.\n");
+			System.exit(0);
 		}
 	}
 	
@@ -389,7 +420,7 @@ public class Circuit
 			ex.printStackTrace();
 		}
 		
-		error("Error. Illegal repeater: " + s);	
+		error("Illegal repeater: '" + s + "'.");	
 	}
 
 	String getToken()
@@ -413,6 +444,9 @@ public class Circuit
 			String token = scan.next();
 			if (token.length() == 0) {
 				continue;
+			}
+			else if (token.startsWith("##")) {
+				testCaseDescription.add(scan.nextLine());
 			}
 			else if (token.startsWith("#")) {
 				scan.nextLine();
@@ -491,8 +525,8 @@ public class Circuit
 				ai.arr = d.outputs;
 				if (strSuffix == null) { // no suffix, so use index 0
 					if (d.outputNames.size() > 1) {
-						error("\nError: unqualified circuit output for circuit "
-							+ "with multiple outputs: '" + str + "'\n");
+						error("Unqualified circuit output for circuit "
+							+ "with multiple outputs: '" + str + "'");
 					}
 					ai.idx = 0; 
 					return true;
@@ -526,16 +560,14 @@ public class Circuit
 		for (int i=0; i<inputNames.size(); i++) {
 			String inputName = inputNames.get(i);
 			if (inputName.equals(subName)) {
-				error("\nError. Subcircuit has same name as input: " + 
-					subName + " in " + type + "\n");
+				error("Subcircuit has same name as input: " + subName);
 			}
 		}
 		for (int i=0; i<internalCircuits.size(); i++) {
 			Circuit ci = internalCircuits.get(i);
 			if (ci.name.equals(subName)) {
 				if (!inputsOnly) {
-					error("\nError. Duplicate subcircuit name: " + 
-						subName + " in " + type + "\n");
+					error("Duplicate subcircuit name: " + subName);
 				}
 				c = ci;
 				break;
@@ -552,9 +584,7 @@ public class Circuit
 		for (int i=0; i<c.inputNames.size(); i++) {
 			String inName = getToken();
 			if (inName.equals("}")) {
-				error("Error. Not enough inputs for '" +
-					subType + " " + subName + "' in circuit '" + 
-					type + ".txt'");
+				error("Not enough inputs for " + subType + " " + subName);
 			}
 			//
 			if (inName.equals("...")) {
@@ -569,17 +599,14 @@ public class Circuit
 				c.inputs[i] = Integer.parseInt(inName);
 			}
 			else {
-				error("\nError. Could not find input '" + 
-					inName + "' for '" + subType + " " + subName +
-					"' in circuit '" + type + ".txt'\n");
+				error("Could not find input '" + 
+					inName + "' for " + subType + " " + subName);
 			}
 		}
 
 		String t = getToken();
 		if (!t.equals("}")) {
-			error("\nError. Too many inputs for '" + 
-				subType + " " + subName + "'' in circuit '" +
-				type + ".txt'\n");
+			error("Too many inputs for " + subType + " " + subName);
 		}
 	}
 	
@@ -590,8 +617,7 @@ public class Circuit
 		for (int i=0; i<outputNames.size(); i++) {
 			String outputName = getToken();
 			if (outputName==null || outputName.equals("}")) {
-				error("Error. Incomplete circuit outputs for circuit type '" 
-					+ type + ".txt'");
+				error("Incomplete circuit outputs.");
 			}
 			
 			if (getArrayAndIndex(ai, outputName)) {
@@ -599,15 +625,13 @@ public class Circuit
 				outputArrayIndices[i] = ai.idx;
 			}
 			else {
-				error("\nError. Could not find output '" + 
-					outputName + "' loading circuit '" + type + ".txt'\n");
+				error("Could not find output '" + outputName);
 			}
 		}
 
 		String t = getToken();
 		if (!t.equals("}")) {
-			error("\nError. too many outputs for circuit '" + 
-				type + ".txt'\n");
+			error("too many outputs for circuit.");
 		}
 	}
 	
@@ -624,7 +648,9 @@ public class Circuit
 			int j=0;
 			while (j<numInputs) {
 				token = getToken();
-				if (token == null) error("Could not load truth table.");
+				if (token == null) {
+					error("Could not load truth table.");
+				}
 				for (int k=0; k<token.length(); k++) {
 					if (token.charAt(k) == '1') {
 						index |= (1<<j);
@@ -640,7 +666,9 @@ public class Circuit
 			j=0;
 			while (j<numOutputs) {
 				token = getToken();
-				if (token == null) error("Could not load truth table.");
+				if (token == null) {
+					error("Could not load truth table");
+				}
 				for (int k=0; k<token.length(); k++) {
 					if (token.charAt(k) == '1') {
 						value |= (1<<j);
@@ -655,6 +683,12 @@ public class Circuit
 			truthTable[index] = value;
 			//System.out.println(value);
 		}
+		while (true) {
+			token = getToken();
+			if (token == null) 
+				error("Missing } after truth table.");
+			if (token.equals("}")) break;
+		}
 	}
 	
 	static int loadCount = 0;
@@ -668,8 +702,10 @@ public class Circuit
 		type = circuitType;
 		openCircuitFile(circuitType);
 		String token;
+		boolean outputsLoaded = false;
 
 		while ((token=getToken()) != null) {
+			//System.out.println(token);
 			if (token.equals("inputNames")) {
 				loadStringList(inputNames);
 				inputArrays = new int[inputNames.size()][];
@@ -683,15 +719,20 @@ public class Circuit
 				outputs = new int[outputNames.size()];
 			}
 			else if (token.equals("circuit")) {
+				if (inputNames.size()==0 || outputNames.size()==0) {
+					error("inputNames and outputNames must come before circuits."); 
+				}
 				loadSubCircuit(false, indent);
 			}
 			else if (token.equals("circuitInputs")) {
 				loadSubCircuit(true, indent);
 			}
 			else if (token.equals("outputs")) {
+				outputsLoaded = true;
 				loadOutputs();
 			}
 			else if (token.equals("truthTable")) {
+				outputsLoaded = true;
 				loadTruthTable();
 			}
 			else if (token.equals("propagationDelay")) {
@@ -702,7 +743,13 @@ public class Circuit
 					propagationDelay[i] = Integer.parseInt(props.get(i));
 				}
 			}
+			else {
+				error("Unkown command: '" + token + "'");
+			}
 		}
+
+		if (!outputsLoaded) error("'outputs' or 'truthTable' required.");
+
 		scan.close();
 		scan = null;
 		extraToken = null;

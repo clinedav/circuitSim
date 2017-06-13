@@ -1,0 +1,8 @@
+# TEST CASES FOR AND: C = A&B
+
+## First test case
+## This test case AND's 1 and 1
+testCase { 11, 1 }
+
+## second test case
+testCase { 01, 0 }

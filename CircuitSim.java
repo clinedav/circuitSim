@@ -9,6 +9,7 @@ public class CircuitSim
 	public static void main(String args[])
 	{
 		// Check to see if we have enough args
+		System.out.println();
 		if (args.length < 1) {
 			System.out.println("Usage: circuitName [testFile]");
 			System.exit(0);

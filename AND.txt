@@ -1,0 +1,19 @@
+
+# AND gate: C = A&B
+# Made from 2 NAND gates
+# by: David Cline
+
+# inputs and outputs
+inputNames { A, B }
+outputNames { C }
+
+# Circuit specification lists a set of subunits
+# with their inputs.  Note that the circuit subunits
+# will be simulated in the order specified.
+
+circuit NAND nand1 { A, B }
+circuit NAND nand2 { nand1[2]}   
+
+# Circuit outputs listed separately
+
+outputs { nand2 }
